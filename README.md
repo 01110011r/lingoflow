@@ -1,32 +1,7 @@
 # Lingo Flow
 
-### App tree
-```
-lingoflow/
-│
-├── apps/
-│   ├── api/
-│   └── web/
-│
-├── packages/
-│   ├── domain/
-│   └── ...
-│
-├── data/
-│   ├── sources/
-│   ├── normalized/
-│   └── seeds/
-│
-├── prisma/
-│   └── schema.prisma
-│
-└── docs/
-    ├── architecture/
-    ├── vocabulary-model/
-    └── learning-model/
-```
-
 ### Decisions
+
 ```
 Project
     LingoFlow
@@ -61,4 +36,3 @@ Audio
 Architecture
     Modular monolith initially
 ```
-
