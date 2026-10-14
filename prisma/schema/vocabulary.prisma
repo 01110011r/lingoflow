@@ -1,0 +1,69 @@
+model Lexeme {
+  id        Int            @id @default(autoincrement())
+  lemma     String         @unique
+  ipaUk     String?
+  ipaUs     String?
+  audioUrl  String?
+  senses    Sense[]
+  frequency FrequencyTag[]
+  createdAt DateTime       @default(now())
+
+  @@index([lemma])
+}
+
+model FrequencyTag {
+  id         Int      @id @default(autoincrement())
+  lexemeId   Int
+  lexeme     Lexeme   @relation(fields: [lexemeId], references: [id], onDelete: Cascade)
+  listType   ListType
+  rank       Int?
+  rawFreq    Float?
+  sfi        Float?
+  dispersion Float?
+
+  @@unique([lexemeId, listType])
+  @@index([listType, rank])
+}
+
+model Sense {
+  id                Int                 @id @default(autoincrement())
+  lexemeId          Int
+  lexeme            Lexeme              @relation(fields: [lexemeId], references: [id], onDelete: Cascade)
+  guideword         String?
+  partOfSpeech      String?
+  level             CEFRLevel
+  topic             String?
+  definition        String?
+  translationRu     String?
+  englishProfileUrl String?
+  collocations      Collocation[]
+  examples          ExampleSentence[]
+  synonymMembers    SynonymMember[]
+  userProgress      UserVocabProgress[]
+
+  @@index([lexemeId])
+  @@index([level])
+  @@index([topic])
+}
+
+model Collocation {
+  id        Int     @id @default(autoincrement())
+  senseId   Int
+  sense     Sense   @relation(fields: [senseId], references: [id], onDelete: Cascade)
+  phrase    String
+  clozeMask String?
+  note      String?
+
+  @@index([senseId])
+}
+
+model ExampleSentence {
+  id            Int     @id @default(autoincrement())
+  senseId       Int
+  sense         Sense   @relation(fields: [senseId], references: [id], onDelete: Cascade)
+  sentence      String
+  translationRu String?
+  audioUrl      String?
+
+  @@index([senseId])
+}

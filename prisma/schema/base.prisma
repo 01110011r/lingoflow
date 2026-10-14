@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../gen-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CEFRLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
+enum VocabStatus {
+  NEW
+  PASSIVE
+  ACTIVE_PRACTICE
+  MASTERED
+  MUTED
+}
+
+enum ListType {
+  NGSL
+  NGSL_SPOKEN
+  AWL
+  NAWL
+  BSL
+  TOEIC
+  GSL
+}

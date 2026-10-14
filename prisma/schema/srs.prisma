@@ -1,0 +1,39 @@
+model UserVocabProgress {
+  id      Int         @id @default(autoincrement())
+  userId  Int
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senseId Int
+  sense   Sense       @relation(fields: [senseId], references: [id], onDelete: Cascade)
+  status  VocabStatus @default(NEW)
+
+  // SRS (Spaced Repetition) fields
+  intervalDays   Float     @default(0)
+  easeFactor     Float     @default(2.5)
+  repetitionStep Int       @default(0)
+  dueDate        DateTime  @default(now())
+  lastReviewedAt DateTime?
+
+  // Active production performance metrics
+  clozeSuccesses Int @default(0)
+  clozeAttempts  Int @default(0)
+  sentenceCount  Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, senseId])
+  @@index([userId, status])
+  @@index([userId, dueDate])
+}
+
+model SRSReviewLog {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progressId   Int
+  grade        Int
+  exerciseType String
+  reviewedAt   DateTime @default(now())
+
+  @@index([userId, reviewedAt])
+}

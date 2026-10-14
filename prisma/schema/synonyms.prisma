@@ -1,0 +1,17 @@
+model SynonymCluster {
+  id      Int             @id @default(autoincrement())
+  title   String?
+  members SynonymMember[]
+}
+
+model SynonymMember {
+  id        Int            @id @default(autoincrement())
+  clusterId Int
+  cluster   SynonymCluster @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  senseId   Int?
+  sense     Sense?         @relation(fields: [senseId], references: [id], onDelete: SetNull)
+  phrase    String
+
+  @@index([clusterId])
+  @@index([senseId])
+}
