@@ -18,6 +18,8 @@ model UserVocabProgress {
   clozeAttempts  Int @default(0)
   sentenceCount  Int @default(0)
 
+  reviews SRSReviewLog[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -31,6 +33,7 @@ model SRSReviewLog {
   userId       Int
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   progressId   Int
+  progress     UserVocabProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
   grade        Int
   exerciseType String
   reviewedAt   DateTime @default(now())
