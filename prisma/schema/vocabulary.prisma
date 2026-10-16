@@ -1,41 +1,43 @@
 model Lexeme {
   id        Int            @id @default(autoincrement())
   lemma     String         @unique
-  ipaUk     String?
-  ipaUs     String?
-  audioUrl  String?
+  ipaUk     String?        @map("ipa_uk")
+  ipaUs     String?        @map("ipa_us")
+  audioUrl  String?        @map("audio_url")
   senses    Sense[]
   frequency FrequencyTag[]
-  createdAt DateTime       @default(now())
+  createdAt DateTime       @default(now()) @map("created_at")
 
-  @@index([lemma])
+  // @@index([lemma])
+  @@map("lexeme")
 }
 
 model FrequencyTag {
   id         Int      @id @default(autoincrement())
-  lexemeId   Int
+  lexemeId   Int      @map("lexeme_id")
   lexeme     Lexeme   @relation(fields: [lexemeId], references: [id], onDelete: Cascade)
-  listType   ListType
+  listType   ListType @map("list_type")
   rank       Int?
-  rawFreq    Float?
+  rawFreq    Float?   @map("raw_freq")
   sfi        Float?
   dispersion Float?
 
   @@unique([lexemeId, listType])
   @@index([listType, rank])
+  @@map("frequency_tag")
 }
 
 model Sense {
   id                Int                 @id @default(autoincrement())
-  lexemeId          Int
+  lexemeId          Int                 @map("lexeme_id")
   lexeme            Lexeme              @relation(fields: [lexemeId], references: [id], onDelete: Cascade)
   guideword         String?
-  partOfSpeech      String?
+  partOfSpeech      String?             @map("part_of_speech")
   level             CEFRLevel
   topic             String?
   definition        String?
-  translationRu     String?
-  englishProfileUrl String?
+  translationUz     String?             @map("translation_uz")
+  englishProfileUrl String?             @map("english_profile_url")
   collocations      Collocation[]
   examples          ExampleSentence[]
   synonymMembers    SynonymMember[]
@@ -44,26 +46,29 @@ model Sense {
   @@index([lexemeId])
   @@index([level])
   @@index([topic])
+  @@map("sense")
 }
 
 model Collocation {
   id        Int     @id @default(autoincrement())
-  senseId   Int
+  senseId   Int     @map("sense_id")
   sense     Sense   @relation(fields: [senseId], references: [id], onDelete: Cascade)
   phrase    String
-  clozeMask String?
+  clozeMask String? @map("cloze_mask")
   note      String?
 
   @@index([senseId])
+  @@map("collocation")
 }
 
 model ExampleSentence {
   id            Int     @id @default(autoincrement())
-  senseId       Int
+  senseId       Int     @map("sense_id")
   sense         Sense   @relation(fields: [senseId], references: [id], onDelete: Cascade)
   sentence      String
-  translationRu String?
-  audioUrl      String?
+  translationUz String? @map("translation_uz")
+  audioUrl      String? @map("audio_url")
 
   @@index([senseId])
+  @@map("example_sentence")
 }
