@@ -2,16 +2,18 @@ model SynonymCluster {
   id      Int             @id @default(autoincrement())
   title   String?
   members SynonymMember[]
+  @@map("synonym_cluster")
 }
 
 model SynonymMember {
   id        Int            @id @default(autoincrement())
-  clusterId Int
+  clusterId Int            @map("cluster_id")
   cluster   SynonymCluster @relation(fields: [clusterId], references: [id], onDelete: Cascade)
-  senseId   Int?
+  senseId   Int?           @map("sense_id")
   sense     Sense?         @relation(fields: [senseId], references: [id], onDelete: SetNull)
   phrase    String
 
   @@index([clusterId])
   @@index([senseId])
+  @@map("synonym_member")
 }

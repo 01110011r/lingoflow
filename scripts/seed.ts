@@ -102,7 +102,7 @@ async function run() {
       });
 
       const sql = `
-        INSERT INTO "Lexeme" ("lemma")
+        INSERT INTO "lexeme" ("lemma")
         VALUES ${values.join(", ")}
         ON CONFLICT ("lemma") DO NOTHING;
       `;
@@ -110,7 +110,7 @@ async function run() {
     }
 
     console.log("Building lemma -> id lookup map...");
-    const lexemeRes = await client.query('SELECT "id", "lemma" FROM "Lexeme"');
+    const lexemeRes = await client.query('SELECT "id", "lemma" FROM "lexeme"');
     const lemmaMap = new Map<string, number>();
     for (const row of lexemeRes.rows) {
       lemmaMap.set(row.lemma, row.id);
@@ -225,7 +225,7 @@ async function run() {
       }
 
       const sql = `
-        INSERT INTO "Sense" ("lexemeId", "guideword", "partOfSpeech", "level", "topic", "definition", "translationRu", "englishProfileUrl")
+        INSERT INTO "sense" ("lexeme_id", "guideword", "part_of_speech", "level", "topic", "definition", "translation_uz", "english_profile_url")
         VALUES ${values.join(", ")}
       `;
       await client.query(sql, params);
@@ -338,9 +338,9 @@ async function run() {
       }
 
       const sql = `
-        INSERT INTO "FrequencyTag" ("lexemeId", "listType", "rank", "rawFreq", "sfi", "dispersion")
+        INSERT INTO "frequency_tag" ("lexeme_id", "list_type", "rank", "raw_freq", "sfi", "dispersion")
         VALUES ${values.join(", ")}
-        ON CONFLICT ("lexemeId", "listType") DO UPDATE SET "rank" = EXCLUDED."rank"
+        ON CONFLICT ("lexeme_id", "list_type") DO UPDATE SET "rank" = EXCLUDED."rank"
       `;
       await client.query(sql, params);
     }
@@ -360,14 +360,14 @@ async function run() {
       if (members.length < 2) continue;
 
       const clusterRes = await client.query(
-        'INSERT INTO "SynonymCluster" ("title") VALUES ($1) RETURNING "id"',
+        'INSERT INTO "synonym_cluster" ("title") VALUES ($1) RETURNING "id"',
         [members[0]]
       );
       const clusterId = clusterRes.rows[0].id;
 
       for (const phrase of members) {
         await client.query(
-          'INSERT INTO "SynonymMember" ("clusterId", "phrase") VALUES ($1, $2)',
+          'INSERT INTO "synonym_member" ("cluster_id", "phrase") VALUES ($1, $2)',
           [clusterId, phrase]
         );
       }
@@ -378,18 +378,18 @@ async function run() {
     // Create Demo User & Active Vocabulary Samples
     console.log("Setting up demo user & active vocabulary progression...");
     const userRes = await client.query(
-      `INSERT INTO "User" ("email", "name", "updatedAt") 
-       VALUES ('demo@lingoflow.ai', 'LingoFlow Learner', NOW())
-       ON CONFLICT ("email") DO UPDATE SET "name" = EXCLUDED."name"
+      `INSERT INTO "user" ("phone", "name", "updated_at") 
+       VALUES ('+998771753102', 'LingoFlow Learner', NOW())
+       ON CONFLICT ("phone") DO UPDATE SET "name" = EXCLUDED."name"
        RETURNING "id"`
     );
     const userId = userRes.rows[0].id;
 
     // Pick 10 sample senses to attach collocations and active SRS state
     const sampleSensesRes = await client.query(
-      `SELECT s.id, s."lexemeId", l.lemma, s.level, s.guideword
-       FROM "Sense" s
-       JOIN "Lexeme" l ON l.id = s."lexemeId"
+      `SELECT s.id, s."lexeme_id", l.lemma, s.level, s.guideword
+       FROM "sense" s
+       JOIN "lexeme" l ON l.id = s."lexeme_id"
        WHERE s.topic IS NOT NULL
        LIMIT 10`
     );
@@ -397,7 +397,7 @@ async function run() {
     for (const row of sampleSensesRes.rows) {
       // Add collocation
       await client.query(
-        `INSERT INTO "Collocation" ("senseId", "phrase", "clozeMask", "note")
+        `INSERT INTO "collocation" ("sense_id", "phrase", "cloze_mask", "note")
          VALUES ($1, $2, $3, $4)`,
         [
           row.id,
@@ -409,9 +409,9 @@ async function run() {
 
       // Add SRS progress
       await client.query(
-        `INSERT INTO "UserVocabProgress" ("userId", "senseId", "status", "dueDate", "easeFactor", "intervalDays", "updatedAt")
+        `INSERT INTO "user_vocab_progress" ("user_id", "sense_id", "status", "due_date", "ease_factor", "interval_days", "updated_at")
          VALUES ($1, $2, 'ACTIVE_PRACTICE', NOW(), 2.5, 1.0, NOW())
-         ON CONFLICT ("userId", "senseId") DO NOTHING`,
+         ON CONFLICT ("user_id", "sense_id") DO NOTHING`,
         [userId, row.id]
       );
     }

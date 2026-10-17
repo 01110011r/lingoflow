@@ -1,42 +1,44 @@
 model UserVocabProgress {
   id      Int         @id @default(autoincrement())
-  userId  Int
+  userId  Int         @map("user_id")
   user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  senseId Int
+  senseId Int         @map("sense_id")
   sense   Sense       @relation(fields: [senseId], references: [id], onDelete: Cascade)
   status  VocabStatus @default(NEW)
 
   // SRS (Spaced Repetition) fields
-  intervalDays   Float     @default(0)
-  easeFactor     Float     @default(2.5)
-  repetitionStep Int       @default(0)
-  dueDate        DateTime  @default(now())
-  lastReviewedAt DateTime?
+  intervalDays   Float     @default(0) @map("interval_days")
+  easeFactor     Float     @default(2.5) @map("ease_factor")
+  repetitionStep Int       @default(0) @map("repetition_step")
+  dueDate        DateTime  @default(now()) @map("due_date")
+  lastReviewedAt DateTime? @map("last_reviewed_at")
 
   // Active production performance metrics
-  clozeSuccesses Int @default(0)
-  clozeAttempts  Int @default(0)
-  sentenceCount  Int @default(0)
+  clozeSuccesses Int @default(0) @map("cloze_successes")
+  clozeAttempts  Int @default(0) @map("cloze_attempts")
+  sentenceCount  Int @default(0) @map("sentence_count")
 
   reviews SRSReviewLog[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([userId, senseId])
   @@index([userId, status])
   @@index([userId, dueDate])
+  @@map("user_vocab_progress")
 }
 
 model SRSReviewLog {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  progressId   Int
+  id           Int               @id @default(autoincrement())
+  userId       Int               @map("user_id")
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progressId   Int               @map("progress_id")
   progress     UserVocabProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
   grade        Int
-  exerciseType String
-  reviewedAt   DateTime @default(now())
+  exerciseType String            @map("exercise_type")
+  reviewedAt   DateTime          @default(now()) @map("reviewed_at")
 
   @@index([userId, reviewedAt])
+  @@map("srs_review_log")
 }
