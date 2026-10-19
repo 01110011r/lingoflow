@@ -11,12 +11,12 @@ import { VocabStatus } from '../generated/prisma/enums';
 
 @Injectable()
 export class StudyService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   getDueQueue(userId: number, limit: number = 20) {
     const self = this;
 
-    return Effect.gen(function* () {
+    return Effect.gen(function*() {
       const user = yield* Effect.tryPromise({
         try: () => self.prisma.user.findUnique({ where: { id: userId } }),
         catch: (cause) =>
@@ -88,7 +88,7 @@ export class StudyService {
         guideword: item.sense.guideword,
         topic: item.sense.topic,
         definition: item.sense.definition,
-        translationRu: item.sense.translationRu,
+        translationUz: item.sense.translationUz,
         status: item.status,
         intervalDays: item.intervalDays,
         easeFactor: item.easeFactor,
@@ -107,7 +107,7 @@ export class StudyService {
     const cleanGrade = Math.max(0, Math.min(5, Math.round(grade)));
     const self = this;
 
-    return Effect.gen(function* () {
+    return Effect.gen(function*() {
       // 1. Fetch or create progress
       const progress = yield* Effect.tryPromise({
         try: async () => {
@@ -167,7 +167,7 @@ export class StudyService {
       easeFactor = Math.max(
         1.3,
         easeFactor +
-          (0.1 - (5 - cleanGrade) * (0.08 + (5 - cleanGrade) * 0.02))
+        (0.1 - (5 - cleanGrade) * (0.08 + (5 - cleanGrade) * 0.02))
       );
 
       const dueDate = new Date(Date.now() + interval * 86400 * 1000);
@@ -223,7 +223,7 @@ export class StudyService {
   getUserStats(userId: number) {
     const self = this;
 
-    return Effect.gen(function* () {
+    return Effect.gen(function*() {
       const counts = yield* Effect.tryPromise({
         try: async () => {
           const [byStatus, totalReviews, dueCount] = await Promise.all([
