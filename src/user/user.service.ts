@@ -20,32 +20,32 @@ const statusOrder: VocabStatus[] = [
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   createUser(dto: CreateUserDto) {
-    const email = this.normalizeEmail(dto.email);
+    const phone = this.normalizePhone(dto.phone);
     const name = this.normalizeName(dto.name);
 
-    if (!email) {
+    if (!phone) {
       return Effect.fail(
-        new ValidationError({ field: 'email', reason: 'Email is required' }),
+        new ValidationError({ field: 'phone', reason: 'Phone is required' }),
       );
     }
 
     return Effect.tryPromise({
       try: async () => {
         const existing = await this.prisma.user.findUnique({
-          where: { email },
+          where: { phone },
         });
         if (existing) {
           throw new ValidationError({
-            field: 'email',
-            reason: 'Email is already registered',
+            field: 'phone',
+            reason: 'Phone is already registered',
           });
         }
 
         return this.prisma.user.create({
-          data: { email, name },
+          data: { phone, name },
           select: {
             id: true,
             email: true,
@@ -65,7 +65,7 @@ export class UserService {
   getUserById(id: number) {
     const self = this;
 
-    return Effect.gen(function* () {
+    return Effect.gen(function*() {
       const user = yield* Effect.tryPromise({
         try: () =>
           self.prisma.user.findUnique({
@@ -91,10 +91,10 @@ export class UserService {
   }
 
   updateUser(id: number, dto: UpdateUserDto) {
-    const email = dto.email === undefined ? undefined : this.normalizeEmail(dto.email);
+    const phone = dto.email === undefined ? undefined : this.normalizePhone(dto.email);
     const name = dto.name === undefined ? undefined : this.normalizeName(dto.name);
 
-    if (dto.email !== undefined && !email) {
+    if (dto.email !== undefined && !phone) {
       return Effect.fail(
         new ValidationError({ field: 'email', reason: 'Email cannot be empty' }),
       );
@@ -102,7 +102,7 @@ export class UserService {
 
     const self = this;
 
-    return Effect.gen(function* () {
+    return Effect.gen(function*() {
       const existing = yield* Effect.tryPromise({
         try: () => self.prisma.user.findUnique({ where: { id } }),
         catch: (cause) =>
@@ -113,9 +113,9 @@ export class UserService {
         return yield* Effect.fail(new UserNotFoundError({ id }));
       }
 
-      if (email && email !== existing.email) {
+      if (phone && phone !== existing.phone) {
         const emailOwner = yield* Effect.tryPromise({
-          try: () => self.prisma.user.findUnique({ where: { email } }),
+          try: () => self.prisma.user.findUnique({ where: { phone } }),
           catch: (cause) =>
             new DatabaseError({ operation: 'checkUserEmail', cause }),
         });
@@ -133,7 +133,7 @@ export class UserService {
         try: () =>
           self.prisma.user.update({
             where: { id },
-            data: { email, name },
+            data: { phone, name },
             select: {
               id: true,
               email: true,
@@ -151,7 +151,7 @@ export class UserService {
   getLearningProgress(userId: number) {
     const self = this;
 
-    return Effect.gen(function* () {
+    return Effect.gen(function*() {
       const user = yield* Effect.tryPromise({
         try: () => self.prisma.user.findUnique({ where: { id: userId } }),
         catch: (cause) =>
@@ -226,7 +226,7 @@ export class UserService {
       return {
         user: {
           id: user.id,
-          email: user.email,
+          email: user.phone,
           name: user.name,
         },
         dueCount,
@@ -251,7 +251,7 @@ export class UserService {
     });
   }
 
-  private normalizeEmail(email: string | undefined) {
+  private normalizePhone(email: string | undefined) {
     return email?.trim().toLowerCase() ?? '';
   }
 

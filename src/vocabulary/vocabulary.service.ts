@@ -11,7 +11,7 @@ import { SearchVocabularyQuery } from './dto/search-vocabulary.dto';
 
 @Injectable()
 export class VocabularyService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   searchLexemes(params: SearchVocabularyQuery) {
     const page = Math.max(1, Number(params.page) || 1);
@@ -115,7 +115,7 @@ export class VocabularyService {
     const clean = lemma.trim().toLowerCase();
     const self = this;
 
-    return Effect.gen(function* () {
+    return Effect.gen(function*() {
       const lexeme = yield* Effect.tryPromise({
         try: () =>
           self.prisma.lexeme.findUnique({
@@ -151,7 +151,7 @@ export class VocabularyService {
   getSenseById(id: number) {
     const self = this;
 
-    return Effect.gen(function* () {
+    return Effect.gen(function*() {
       const sense = yield* Effect.tryPromise({
         try: () =>
           self.prisma.sense.findUnique({
@@ -284,7 +284,7 @@ export class VocabularyService {
           guideword: s.guideword,
           topic: s.topic,
           definition: s.definition,
-          translationRu: s.translationRu,
+          translationRu: s.translationUz,
           collocations: s.collocations.map((c) => ({
             phrase: c.phrase,
             clozeMask: c.clozeMask,

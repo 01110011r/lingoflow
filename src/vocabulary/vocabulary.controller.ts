@@ -10,7 +10,7 @@ import { runEffect } from '../common/effect/runner';
 import { SearchVocabularyQuery } from './dto/search-vocabulary.dto';
 import { CEFRLevel } from '../generated/prisma/enums';
 
-@Controller('api/vocabulary')
+@Controller('vocabulary')
 export class VocabularyController {
   constructor(private readonly vocabService: VocabularyService) {}
 

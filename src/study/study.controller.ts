@@ -9,7 +9,7 @@ import { StudyService } from './study.service';
 import { runEffect } from '../common/effect/runner';
 import { SubmitReviewDto } from './dto/review.dto';
 
-@Controller('api/study')
+@Controller('study')
 export class StudyController {
   constructor(private readonly studyService: StudyService) {}
 
