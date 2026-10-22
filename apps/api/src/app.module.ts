@@ -5,6 +5,11 @@ import { StudyModule } from './study/study.module';
 import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [PrismaModule, VocabularyModule, StudyModule, UserModule],
+  imports: [
+    PrismaModule,
+    VocabularyModule,
+    StudyModule,
+    UserModule
+  ],
 })
-export class AppModule {}
+export class AppModule { }
