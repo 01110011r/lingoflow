@@ -35,4 +35,5 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .DS_Store
 
 /prisma/gen-client
-/src/generated/
+/apps/api/src/generated/
+.next

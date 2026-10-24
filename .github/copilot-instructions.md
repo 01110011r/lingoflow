@@ -6,21 +6,21 @@ Use Bun for package and script execution:
 
 ```sh
 bun install
-bun run build                 # NestJS production build
-bun run start:dev             # NestJS watch mode
-bun run start                 # NestJS non-watch start
-bun run start:prod            # Run the compiled app (the script invokes node)
+bun run build                 # Build API and web workspaces
+bun run build:api             # NestJS production build
+bun run dev:api               # NestJS watch mode
+bun run dev:web               # Next.js watch mode
 ```
 
 There are currently no committed test files or `test`/`lint` package scripts. If tests are added, follow the repository's Bun convention: run the suite with `bun test` and a single file with `bun test path/to/file.test.ts`.
 
-Prisma uses the Prisma 7 folder schema configured in `prisma7.config.ts`; `DATABASE_URL` must be available:
+Prisma uses the Prisma 7 folder schema configured in `apps/api/prisma7.config.ts`; `DATABASE_URL` must be available:
 
 ```sh
-bunx prisma validate
-bunx prisma generate
-bunx prisma migrate dev
-bunx prisma migrate deploy
+bun run prisma:validate
+bun run prisma:generate
+bun run --cwd apps/api prisma migrate dev
+bun run --cwd apps/api prisma migrate deploy
 ```
 
 Generated Prisma Client output is `src/generated/prisma/` and is ignored by Git. Regenerate it after schema changes before compiling. The schema is split across `prisma/schema/*.prisma`; keep the generator and datasource in `base.prisma`, and add models to the domain-specific file.
@@ -28,21 +28,21 @@ Generated Prisma Client output is `src/generated/prisma/` and is ignored by Git.
 To load the development vocabulary dataset, make sure PostgreSQL is reachable and `tmp/dset.xlsx` exists, then run:
 
 ```sh
-bun scripts/seed.ts
+bun run seed
 ```
 
 The seed script reads multiple named workbook sheets, normalizes lemmas to lowercase, inserts/upserts vocabulary and frequency data with direct `pg` queries, and creates a demo user plus sample SRS progress. It is a data import, not a general application startup hook.
 
 ## Architecture
 
-LingoFlow is a NestJS modular monolith backed by PostgreSQL through Prisma 7 and the `@prisma/adapter-pg` driver adapter. `src/main.ts` boots Nest with Fastify on `0.0.0.0` and `PORT` (default `3000`); `AppModule` composes the global Prisma module with the vocabulary and study modules.
+LingoFlow is a Bun workspace monorepo. `apps/api` is a NestJS modular monolith backed by PostgreSQL through Prisma 7 and the `@prisma/adapter-pg` driver adapter. `apps/api/src/main.ts` boots Nest with Fastify on `0.0.0.0` and `PORT` (default `3000`); `AppModule` composes the global Prisma module with the vocabulary and study modules. `apps/web` is the Next.js frontend.
 
-- `src/prisma/` owns the shared `PrismaService`, including the `pg.Pool` lifecycle and Prisma adapter setup.
-- `src/vocabulary/` exposes read-oriented vocabulary exploration under `/api/vocabulary`: lexeme/sense lookup, filtered pagination, CEFR/topic/frequency summaries, and practice batches.
-- `src/study/` exposes learner progress under `/api/study`: due queues, review submission, and user statistics. Review submission applies the SM-2-style interval/ease calculation and updates `UserVocabProgress` plus `SRSReviewLog` in one transaction.
-- `src/user/` exposes `/api/users` for user profile creation/updates and a learning dashboard at `/api/users/:id/progress`, aggregating SRS status, due work, review accuracy, average grade, and recent reviews.
-- `src/common/effect/` is the application error boundary. Services return `Effect` values, controllers pass them through `runEffect`, and `runner.ts` maps tagged not-found/validation errors to Nest HTTP exceptions while treating other failures as internal errors.
-- `prisma/schema/` models the vocabulary hierarchy (`Lexeme` -> `Sense` -> collocations/examples), frequency tags, synonym clusters, users, and per-user spaced-repetition state. `Sense` is the curriculum unit: CEFR level, guideword, topic, definition, and translation belong to a distinct sense rather than only to a lemma.
+- `apps/api/src/prisma/` owns the shared `PrismaService`, including the `pg.Pool` lifecycle and Prisma adapter setup.
+- `apps/api/src/vocabulary/` exposes read-oriented vocabulary exploration under `/api/vocabulary`: lexeme/sense lookup, filtered pagination, CEFR/topic/frequency summaries, and practice batches.
+- `apps/api/src/study/` exposes learner progress under `/api/study`: due queues, review submission, and user statistics. Review submission applies the SM-2-style interval/ease calculation and updates `UserVocabProgress` plus `SRSReviewLog` in one transaction.
+- `apps/api/src/user/` exposes `/api/users` for user profile creation/updates and a learning dashboard at `/api/users/:id/progress`, aggregating SRS status, due work, review accuracy, average grade, and recent reviews.
+- `apps/api/src/common/effect/` is the application error boundary. Services return `Effect` values, controllers pass them through `runEffect`, and `runner.ts` maps tagged not-found/validation errors to Nest HTTP exceptions while treating other failures as internal errors.
+- `apps/api/prisma/schema/` models the vocabulary hierarchy (`Lexeme` -> `Sense` -> collocations/examples), frequency tags, synonym clusters, users, and per-user spaced-repetition state. `Sense` is the curriculum unit: CEFR level, guideword, topic, definition, and translation belong to a distinct sense rather than only to a lemma.
 
 The intended product architecture from `README.md` is a modular monolith: vocabulary is the curriculum foundation, audio is provider-abstracted, and AI is a generation/evaluation layer rather than the authority for curriculum or ground-truth vocabulary.
 
