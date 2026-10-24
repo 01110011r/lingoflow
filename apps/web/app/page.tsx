@@ -1,9 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { Effect } from 'effect';
 import { api, PracticeCard, run, SearchResponse, Stats, VocabularyItem } from '../lib/api';
 
 const gradeLabels = ['Again', 'Hard', 'Almost', 'Good', 'Great', 'Mastered'];
+type AgentMode = 'paragraph' | 'audio' | 'video';
+type AgentMessage = { mode: AgentMode; words: string[]; content: string; createdAt: string };
 
 export default function HomePage() {
   const [query, setQuery] = useState('');
@@ -14,6 +17,11 @@ export default function HomePage() {
   const [revealed, setRevealed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [agentWords, setAgentWords] = useState('');
+  const [agentMode, setAgentMode] = useState<AgentMode>('paragraph');
+  const [agentMessages, setAgentMessages] = useState<AgentMessage[]>([]);
+  const [agentBusy, setAgentBusy] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -32,6 +40,7 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
+
   }, []);
 
   useEffect(() => {
@@ -46,6 +55,7 @@ export default function HomePage() {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Search failed.');
     }
+
   }
 
   async function reviewCard(grade: number) {
@@ -60,6 +70,34 @@ export default function HomePage() {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Review could not be saved.');
     }
+
+  }
+
+  async function generateAgentContent() {
+    const words = agentWords.split(',').map((word) => word.trim().toLowerCase()).filter(Boolean).slice(0, 6);
+    if (!words.length) {
+      setMessage('Add at least one target word for the agent.');
+      return;
+    }
+    setAgentBusy(true);
+    setMessage('');
+    try {
+      const content = await run(Effect.tryPromise({
+        try: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          if (agentMode === 'paragraph') return `On a quiet morning, I decided to ${words[0]} with more intention. Each small choice helped me ${words[1] ?? 'notice'} the world around me, turning an ordinary moment into a deliberate step forward.`;
+          if (agentMode === 'audio') return `Today we will practice: ${words.join(', ')}. Listen once for meaning, then repeat the sentence with your own voice.`;
+          return `A short story about ${words.slice(0, 3).join(', ')}.`;
+        },
+        catch: () => new Error('The agent could not create this yet.'),
+      }));
+      setAgentMessages((messages) => [{ mode: agentMode, words, content, createdAt: new Date().toISOString() }, ...messages].slice(0, 4));
+      if (agentMode === 'audio') speak(content, setSpeaking);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'The agent could not create this yet.');
+    } finally {
+      setAgentBusy(false);
+    }
   }
 
   return (
@@ -71,6 +109,7 @@ export default function HomePage() {
         </a>
         <nav>
           <a className="nav-active" href="#today">Today</a>
+          <a href="#agent">Agent</a>
           <a href="#vocabulary">Vocabulary</a>
           <a href="#progress">Progress</a>
         </nav>
@@ -150,6 +189,44 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="agent-section" id="agent">
+        <div className="agent-heading">
+          <div>
+            <p className="eyebrow">Your language studio</p>
+            <h2>Ask the agent to make it real.</h2>
+            <p className="agent-subtitle">Turn a handful of target words into something you can read, hear, or watch.</p>
+          </div>
+          <span className="agent-badge"><span className="agent-pulse" /> AI study partner</span>
+        </div>
+        <div className="agent-layout">
+          <div className="agent-chat">
+            <div className="chat-topline"><span className="agent-avatar">✦</span><div><strong>Flow Agent</strong><small>Curriculum-aware creation</small></div><span className="online-dot" /></div>
+            <div className="chat-history">
+              <div className="chat-bubble agent-bubble">Give me a few words and I&apos;ll build a focused learning moment around them.</div>
+              {agentMessages.map((item, index) => <div className="chat-turn" key={`${item.createdAt}-${index}`}>
+                <div className="chat-bubble user-bubble">{item.words.join(' · ')} <span className="mode-mini">{item.mode}</span></div>
+                <div className={`result-card result-${item.mode}`}>
+                  <div className="result-label">{item.mode === 'paragraph' ? 'Generated paragraph' : item.mode === 'audio' ? 'Listening practice' : 'Video storyboard'}</div>
+                  {item.mode === 'paragraph' && <p>{item.content}</p>}
+                  {item.mode === 'audio' && <div className="audio-result"><button onClick={() => speak(item.content, setSpeaking)}>{speaking ? '❚❚' : '▶'}</button><div><strong>Target-word narration</strong><small>Browser voice preview · 0:32</small></div></div>}
+                  {item.mode === 'video' && <div className="video-result"><span className="play-orb">▶</span><div><strong>{item.content}</strong><small>3 scenes · vocabulary captions included</small></div></div>}
+                </div>
+              </div>)}
+            </div>
+            <form className="agent-composer" onSubmit={(event) => { event.preventDefault(); void generateAgentContent(); }}>
+              <div className="target-input"><span>⌘</span><input value={agentWords} onChange={(event) => setAgentWords(event.target.value)} placeholder="target, explore, deliberate..." aria-label="Target words" /><button type="button" className="add-current" onClick={() => activeCard && setAgentWords((words) => words ? `${words}, ${activeCard.lemma}` : activeCard.lemma)}>+ current word</button></div>
+              <div className="composer-bottom"><div className="mode-picker">{(['paragraph', 'audio', 'video'] as AgentMode[]).map((mode) => <button type="button" key={mode} className={agentMode === mode ? 'mode-active' : ''} onClick={() => setAgentMode(mode)}>{mode === 'paragraph' ? '▤' : mode === 'audio' ? '◖' : '▣'} {mode}</button>)}</div><button className="generate-button" disabled={agentBusy}>{agentBusy ? 'Creating…' : 'Create'} <span>↗</span></button></div>
+            </form>
+          </div>
+          <aside className="agent-aside">
+            <p className="eyebrow">How it works</p>
+            <div className="agent-step"><span>01</span><div><strong>Choose words</strong><p>Use the word you are practicing or add your own targets.</p></div></div>
+            <div className="agent-step"><span>02</span><div><strong>Pick a format</strong><p>Read a paragraph, listen to it, or plan a short visual story.</p></div></div>
+            <div className="agent-step"><span>03</span><div><strong>Keep learning</strong><p>Every output stays grounded in your selected vocabulary.</p></div></div>
+          </aside>
+        </div>
+      </section>
+
       <section className="vocabulary-section" id="vocabulary">
         <div className="section-heading">
           <div><p className="eyebrow">Explore the curriculum</p><h2>Vocabulary library</h2></div>
@@ -166,6 +243,16 @@ export default function HomePage() {
       <footer><span>LINGOFLOW / BETA</span><span>Built for consistent progress.</span></footer>
     </main>
   );
+}
+
+function speak(text: string, setSpeaking: (value: boolean) => void) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  setSpeaking(true);
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = .9;
+  utterance.onend = () => setSpeaking(false);
+  window.speechSynthesis.speak(utterance);
 }
 
 function Stat({ label, value, detail, accent }: { label: string; value: number; detail: string; accent: string }) {
